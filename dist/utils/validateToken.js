@@ -5,7 +5,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.validateRefreshToken = exports.validateAccessToken = void 0;
 require("dotenv/config");
-const { ACCESS_TOKEN_SECRET } = process.env;
+const { ACCESS_TOKEN_SECRET, REFRESH_TOKEN_SECRET } = process.env;
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const validateAccessToken = function (req, res, next) {
     let token = req.headers['authorization']?.split(' ')[1];
@@ -16,8 +16,8 @@ const validateAccessToken = function (req, res, next) {
     if (!token)
         return res.status(401).json({ message: 'Access Denied, No token provided!' });
     try {
-        const userID = jsonwebtoken_1.default.verify(token, ACCESS_TOKEN_SECRET);
-        req.userId = userID;
+        const { id } = jsonwebtoken_1.default.verify(token, ACCESS_TOKEN_SECRET);
+        req.userId = id;
         next();
     }
     catch (error) {
@@ -32,11 +32,12 @@ const validateRefreshToken = function (req, res, next) {
     if (!refreshToken) {
         refreshToken = req.cookies['refreshToken'];
     }
+    console.log(refreshToken, 'refresh');
     if (!refreshToken)
         return res.status(401).json({ message: 'Access Denied, Refresh token not provided!' });
     try {
-        const userID = jsonwebtoken_1.default.verify(refreshToken, ACCESS_TOKEN_SECRET);
-        req.userId = userID;
+        const { id } = jsonwebtoken_1.default.verify(refreshToken, REFRESH_TOKEN_SECRET);
+        req.userId = id;
         req.refreshToken = refreshToken;
         next();
     }
