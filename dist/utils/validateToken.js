@@ -32,7 +32,6 @@ const validateRefreshToken = function (req, res, next) {
     if (!refreshToken) {
         refreshToken = req.cookies['refreshToken'];
     }
-    console.log(refreshToken, 'refresh');
     if (!refreshToken)
         return res.status(401).json({ message: 'Access Denied, Refresh token not provided!' });
     try {

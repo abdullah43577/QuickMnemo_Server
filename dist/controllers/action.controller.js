@@ -16,7 +16,7 @@ const generateNewToken = async (req, res) => {
     try {
         const { userId, refreshToken } = req;
         const refreshTokens = await tokens_model_1.default.findOne({ token: refreshToken });
-        if (!refreshTokens || userId !== refreshTokens.user)
+        if (!refreshTokens || refreshToken !== refreshTokens.token || userId !== refreshTokens.user.toString())
             return res.status(401).json({ message: 'unauthorized' });
         const accessToken = (0, generateToken_1.generateAccessToken)(userId);
         res.cookie('accessToken', accessToken, { secure: true, httpOnly: true, maxAge: 30 * 60 * 1000 });
@@ -30,9 +30,7 @@ exports.generateNewToken = generateNewToken;
 const initiatePayment = async (req, res) => {
     try {
         const { userId } = req;
-        console.log(userId, 'userId');
         const user = await users_model_1.default.findById(userId);
-        console.log('user', user);
         if (!user)
             return res.status(404).json({ message: 'User not found!' });
         const tx_ref = (0, uuid_1.v4)();
@@ -67,20 +65,18 @@ const paymentCallback = async (req, res) => {
     try {
         const { status, tx_ref, transaction_id } = req.query;
         if (status === 'successful' || status === 'completed') {
-            console.log('i ran');
             // verify transaction
-            const response = await axios_1.default.get(`https://api.flutterwave.com/v3/transactions/${transaction_id}/verify
-`, {
+            const response = await axios_1.default.get(`https://api.flutterwave.com/v3/transactions/${transaction_id}/verify`, {
                 headers: {
                     Authorization: `Bearer ${FLW_SECRET_KEY}`,
                 },
             });
-            console.log(response, 'response');
             if (response.data.status === 'successful' && response.data.amount === 950 && response.data.currency === 'NGN') {
+                console.log('i ran');
                 // update transaction
                 const transaction = await transaction_model_1.default.findOne({ ref: tx_ref });
                 if (!transaction)
-                    return res.status(404).json({ message: 'Trasaction not found!' });
+                    return res.status(404).json({ message: 'Transaction not found!' });
                 console.log(transaction, 'transact');
                 transaction.isSuccessful = true;
                 await transaction.save();

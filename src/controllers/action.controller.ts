@@ -3,7 +3,6 @@ import RefreshToken from '../models/tokens.model';
 import { IUserRequest } from '../utils/validateToken';
 import { generateAccessToken } from '../utils/generateToken';
 import axios from 'axios';
-import { AxiosError } from 'axios';
 import { v4 as uuidv4 } from 'uuid';
 import User from '../models/users.model';
 import Transaction from '../models/transaction.model';
@@ -16,7 +15,8 @@ const generateNewToken = async (req: IUserRequest, res: Response) => {
     const { userId, refreshToken } = req;
 
     const refreshTokens = await RefreshToken.findOne({ token: refreshToken });
-    if (!refreshTokens || userId !== refreshTokens.user) return res.status(401).json({ message: 'unauthorized' });
+
+    if (!refreshTokens || refreshToken !== refreshTokens.token || userId !== refreshTokens.user.toString()) return res.status(401).json({ message: 'unauthorized' });
 
     const accessToken = generateAccessToken(userId as string);
     res.cookie('accessToken', accessToken, { secure: true, httpOnly: true, maxAge: 30 * 60 * 1000 });
@@ -29,9 +29,7 @@ const generateNewToken = async (req: IUserRequest, res: Response) => {
 const initiatePayment = async (req: IUserRequest, res: Response) => {
   try {
     const { userId } = req;
-    console.log(userId, 'userId');
     const user = await User.findById(userId);
-    console.log('user', user);
     if (!user) return res.status(404).json({ message: 'User not found!' });
 
     const tx_ref = uuidv4();
@@ -71,24 +69,18 @@ const paymentCallback = async (req: Request, res: Response) => {
   try {
     const { status, tx_ref, transaction_id } = req.query;
     if (status === 'successful' || status === 'completed') {
-      console.log('i ran');
       // verify transaction
-      const response = await axios.get(
-        `https://api.flutterwave.com/v3/transactions/${transaction_id}/verify
-`,
-        {
-          headers: {
-            Authorization: `Bearer ${FLW_SECRET_KEY}`,
-          },
-        }
-      );
-
-      console.log(response, 'response');
+      const response = await axios.get(`https://api.flutterwave.com/v3/transactions/${transaction_id}/verify`, {
+        headers: {
+          Authorization: `Bearer ${FLW_SECRET_KEY}`,
+        },
+      });
 
       if (response.data.status === 'successful' && response.data.amount === 950 && response.data.currency === 'NGN') {
+        console.log('i ran');
         // update transaction
         const transaction = await Transaction.findOne({ ref: tx_ref });
-        if (!transaction) return res.status(404).json({ message: 'Trasaction not found!' });
+        if (!transaction) return res.status(404).json({ message: 'Transaction not found!' });
 
         console.log(transaction, 'transact');
         transaction.isSuccessful = true;
