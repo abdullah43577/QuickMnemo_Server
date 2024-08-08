@@ -22,7 +22,7 @@ const register = async (req, res) => {
         if (existingUser)
             return res.status(409).json({ message: 'User with credentials exists!' });
         const encryptedPassword = await (0, hashPassword_1.hashPassword)(password);
-        const user = new users_model_1.default({ email, encryptedPassword });
+        const user = new users_model_1.default({ email, password: encryptedPassword });
         await user.save();
         //* generate tokens
         const token = (0, generateToken_1.generateAccessToken)(user._id.toString());

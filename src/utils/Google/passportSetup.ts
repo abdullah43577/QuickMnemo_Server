@@ -16,11 +16,7 @@ export const passportSetup = function () {
         try {
           const { id, emails, photos } = profile;
 
-          const user = new User({
-            googleId: id,
-            email: emails?.[0].value,
-          });
-          await user.save();
+          const user = await User.findOneAndUpdate({ googleId: id }, { $setOnInsert: { email: emails?.[0].value, googleId: id } }, { upsert: true, new: true, setDefaultsOnInsert: true });
 
           done(null, user);
         } catch (error) {

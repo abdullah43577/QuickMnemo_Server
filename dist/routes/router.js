@@ -8,12 +8,12 @@ const express_1 = require("express");
 const auth_controller_1 = require("../controllers/auth.controller");
 const validateToken_1 = require("../utils/validateToken");
 const action_controller_1 = require("../controllers/action.controller");
-const generateToken_1 = require("../utils/generateToken");
-const tokens_model_1 = __importDefault(require("../models/tokens.model"));
 const passport_1 = __importDefault(require("passport"));
+const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
+const { SESSION_SECRET, CLIENT_URL } = process.env;
 const router = (0, express_1.Router)();
 exports.router = router;
-//* Google Auth routes
+//* Google Auth route
 router.get('/google', passport_1.default.authenticate('google', { scope: ['profile', 'email'] }));
 router.get('/google/callback', passport_1.default.authenticate('google'), async (req, res) => {
     try {
@@ -21,21 +21,14 @@ router.get('/google/callback', passport_1.default.authenticate('google'), async 
         if (!user)
             return res.status(401).json({ error: 'Authentication failed' });
         const userId = user._id.toString();
-        // generate tokens
-        const token = (0, generateToken_1.generateAccessToken)(userId);
-        const refreshToken = (0, generateToken_1.generateRefreshToken)(userId);
-        // update refreshToken in DB
-        const newRefreshToken = new tokens_model_1.default({ token: refreshToken, user: userId });
-        await newRefreshToken.save();
-        // set cookies for tokens
-        res.cookie('accessToken', token, { httpOnly: true, secure: true, maxAge: 15 * 60 * 1000 });
-        res.cookie('refreshToken', refreshToken, { httpOnly: true, secure: true, sameSite: 'strict', maxAge: 7 * 24 * 60 * 60 * 1000 });
-        res.status(200).json({ message: 'User logged in successfully', token, refreshToken });
+        const tokenId = jsonwebtoken_1.default.sign({ userId }, SESSION_SECRET, { expiresIn: '10m' });
+        res.redirect(`${CLIENT_URL}?token=${tokenId}`);
     }
     catch (error) {
         res.status(500).json({ message: 'Interal Server Error', error });
     }
 });
+router.post('/google/callback/validate-session', action_controller_1.validateOAuthSession);
 // auth routes
 router.get('/', auth_controller_1.testApi);
 router.post('/register', auth_controller_1.register);
@@ -43,5 +36,5 @@ router.post('/login', auth_controller_1.login);
 router.delete('/logout', validateToken_1.validateRefreshToken, auth_controller_1.logout);
 // action routes
 router.post('/token', validateToken_1.validateRefreshToken, action_controller_1.generateNewToken);
-router.post('/payment', validateToken_1.validateAccessToken, action_controller_1.initiatePayment);
-router.get('/payment/callback', action_controller_1.paymentCallback);
+router.get('/payment', validateToken_1.validateAccessToken, action_controller_1.initiatePayment);
+router.post('/payment/callback', validateToken_1.validateAccessToken, action_controller_1.paymentCallback);
