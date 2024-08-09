@@ -13,6 +13,7 @@ const handleErrors_1 = require("../utils/handleErrors");
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const nodemailer_1 = require("../utils/nodemailer");
 const { FLW_SECRET_KEY, FLW_SECRET_HASH, CLIENT_URL, SESSION_SECRET, PAYMENT_PLAN } = process.env;
+const AMOUNT = 500;
 const validateOAuthSession = async (req, res) => {
     try {
         const { tokenId } = req.body;
@@ -55,13 +56,13 @@ exports.generateNewToken = generateNewToken;
 const initiatePayment = async (req, res) => {
     try {
         const { userId } = req;
-        const user = await users_model_1.default.findById(userId);
+        const user = await users_model_1.default.findById(userId).lean();
         if (!user)
             return res.status(404).json({ message: 'User not found!' });
         const tx_ref = (0, uuid_1.v4)();
         const { data } = await axios_1.default.post('https://api.flutterwave.com/v3/payments', {
             tx_ref,
-            amount: '500',
+            amount: AMOUNT,
             currency: 'NGN',
             redirect_url: `${CLIENT_URL}`, // ideally be a frontend url
             customer: {
@@ -71,16 +72,13 @@ const initiatePayment = async (req, res) => {
                 title: 'QuickMnemo Subscription',
                 description: 'QuickMnemo: Effortlessly generate personalized mnemonics to enhance memory retention and learning. Simplify complex information with our user-friendly platform.',
             },
-            // payment_plan: PAYMENT_PLAN,
+            payment_plan: PAYMENT_PLAN,
         }, {
             headers: {
                 Authorization: `Bearer ${FLW_SECRET_KEY}`,
                 'Content-Type': 'application/json',
             },
         });
-        // store data in DB
-        // const transaction = new Transaction({ userId, ref: tx_ref });
-        // await transaction.save();
         res.status(200).json({ message: data.data.link });
     }
     catch (error) {
@@ -99,7 +97,7 @@ const paymentCallback = async (req, res) => {
                 },
             });
             const dataObj = response.data.data;
-            if (dataObj.status === 'successful' && dataObj.amount === 500 && dataObj.currency === 'NGN') {
+            if (dataObj.status === 'successful' && dataObj.amount === AMOUNT && dataObj.currency === 'NGN') {
                 //* subscription ID
                 const { id } = dataObj;
                 const user = await users_model_1.default.findById(userId);

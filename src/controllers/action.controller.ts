@@ -12,6 +12,8 @@ import { transportMail } from '../utils/nodemailer';
 
 const { FLW_SECRET_KEY, FLW_SECRET_HASH, CLIENT_URL, SESSION_SECRET, PAYMENT_PLAN } = process.env;
 
+const AMOUNT = 500;
+
 const validateOAuthSession = async (req: IUserRequest, res: Response) => {
   try {
     const { tokenId } = req.body;
@@ -57,7 +59,7 @@ const generateNewToken = async (req: IUserRequest, res: Response) => {
 const initiatePayment = async (req: IUserRequest, res: Response) => {
   try {
     const { userId } = req;
-    const user = await User.findById(userId);
+    const user = await User.findById(userId).lean();
     if (!user) return res.status(404).json({ message: 'User not found!' });
 
     const tx_ref = uuidv4();
@@ -66,7 +68,7 @@ const initiatePayment = async (req: IUserRequest, res: Response) => {
       'https://api.flutterwave.com/v3/payments',
       {
         tx_ref,
-        amount: '500',
+        amount: AMOUNT,
         currency: 'NGN',
         redirect_url: `${CLIENT_URL}`, // ideally be a frontend url
         customer: {
@@ -76,7 +78,7 @@ const initiatePayment = async (req: IUserRequest, res: Response) => {
           title: 'QuickMnemo Subscription',
           description: 'QuickMnemo: Effortlessly generate personalized mnemonics to enhance memory retention and learning. Simplify complex information with our user-friendly platform.',
         },
-        // payment_plan: PAYMENT_PLAN,
+        payment_plan: PAYMENT_PLAN,
       },
       {
         headers: {
@@ -85,10 +87,6 @@ const initiatePayment = async (req: IUserRequest, res: Response) => {
         },
       }
     );
-
-    // store data in DB
-    // const transaction = new Transaction({ userId, ref: tx_ref });
-    // await transaction.save();
 
     res.status(200).json({ message: data.data.link });
   } catch (error) {
@@ -110,7 +108,7 @@ const paymentCallback = async (req: IUserRequest, res: Response) => {
 
       const dataObj = response.data.data;
 
-      if (dataObj.status === 'successful' && dataObj.amount === 500 && dataObj.currency === 'NGN') {
+      if (dataObj.status === 'successful' && dataObj.amount === AMOUNT && dataObj.currency === 'NGN') {
         //* subscription ID
         const { id } = dataObj;
 
