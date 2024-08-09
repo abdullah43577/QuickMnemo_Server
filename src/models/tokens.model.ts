@@ -2,7 +2,7 @@ import { Schema, Types, model } from 'mongoose';
 
 interface IRefreshToken {
   token: string;
-  user: Types.ObjectId;
+  userId: Types.ObjectId;
 }
 
 const refreshTokenSchema = new Schema<IRefreshToken>(
@@ -12,7 +12,7 @@ const refreshTokenSchema = new Schema<IRefreshToken>(
       required: true,
     },
 
-    user: {
+    userId: {
       ref: 'User',
       type: Schema.Types.ObjectId,
       required: true,

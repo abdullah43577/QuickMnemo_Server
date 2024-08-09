@@ -1,8 +1,13 @@
 import { Schema, model } from 'mongoose';
 
-interface IUser {
+export interface IUser {
   email: string;
   password?: string;
+  isPremium: boolean;
+  subscription: {
+    id: string;
+    status: 'active' | 'pending' | 'cancelled';
+  };
   googleId?: string;
 }
 
@@ -17,6 +22,25 @@ const userSchema = new Schema<IUser>(
     password: {
       type: String,
       default: null,
+    },
+
+    isPremium: {
+      type: Boolean,
+      default: false,
+    },
+
+    subscription: {
+      id: {
+        type: String,
+        required: true,
+        default: null,
+      },
+
+      status: {
+        type: String,
+        enum: ['active', 'pending', 'cancelled'],
+        default: 'pending',
+      },
     },
 
     googleId: {

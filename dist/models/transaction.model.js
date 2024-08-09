@@ -2,12 +2,16 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const mongoose_1 = require("mongoose");
 const transactionSchema = new mongoose_1.Schema({
-    user: {
+    userId: {
         ref: 'User',
         type: mongoose_1.Schema.Types.ObjectId,
         required: true,
     },
     ref: {
+        type: String,
+        required: true,
+    },
+    subscriptionId: {
         type: String,
         required: true,
     },

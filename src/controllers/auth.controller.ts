@@ -28,7 +28,7 @@ const register = async (req: Request, res: Response) => {
     const refreshToken = generateRefreshToken(user._id.toString());
 
     //* update refreshToken in DB
-    const newRefreshToken = new RefreshToken({ token: refreshToken, user: user._id });
+    const newRefreshToken = new RefreshToken({ token: refreshToken, userId: user._id });
     await newRefreshToken.save();
 
     //* set cookies for tokens
@@ -57,7 +57,7 @@ const login = async (req: Request, res: Response) => {
     const refreshToken = generateRefreshToken(existingUser._id.toString());
 
     //* update refreshToken in DB
-    const newRefreshToken = new RefreshToken({ token: refreshToken, user: existingUser._id });
+    const newRefreshToken = new RefreshToken({ token: refreshToken, userId: existingUser._id });
     await newRefreshToken.save();
 
     //* set cookies for tokens

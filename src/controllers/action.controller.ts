@@ -4,14 +4,13 @@ import { IUserRequest } from '../utils/validateToken';
 import { generateAccessToken, generateRefreshToken } from '../utils/generateToken';
 import axios from 'axios';
 import { v4 as uuidv4 } from 'uuid';
-import User from '../models/users.model';
-import Transaction from '../models/transaction.model';
+import User, { IUser } from '../models/users.model';
 import { handleErrors } from '../utils/handleErrors';
 import jwt, { Secret } from 'jsonwebtoken';
 import { CustomJwtPayload } from '../utils/validateToken';
 import { transportMail } from '../utils/nodemailer';
 
-const { FLW_SECRET_KEY, FLW_SECRET_HASH, CLIENT_URL, SESSION_SECRET, FLW_SECRET_TOKEN } = process.env;
+const { FLW_SECRET_KEY, FLW_SECRET_HASH, CLIENT_URL, SESSION_SECRET, PAYMENT_PLAN } = process.env;
 
 const validateOAuthSession = async (req: IUserRequest, res: Response) => {
   try {
@@ -26,14 +25,13 @@ const validateOAuthSession = async (req: IUserRequest, res: Response) => {
     const refreshToken = generateRefreshToken(userId);
 
     // update refreshToken in DB
-    const newRefreshToken = new RefreshToken({ token: refreshToken, user: userId });
+    const newRefreshToken = new RefreshToken({ token: refreshToken, userId: userId });
     await newRefreshToken.save();
 
     // set cookies for tokens
     res.cookie('accessToken', token, { httpOnly: true, secure: true, sameSite: 'none', maxAge: 15 * 60 * 1000 });
     res.cookie('refreshToken', refreshToken, { httpOnly: true, secure: true, sameSite: 'none', maxAge: 7 * 24 * 60 * 60 * 1000 });
 
-    // res.redirect(`${CLIENT_URL}`);
     res.sendStatus(200);
   } catch (error) {
     handleErrors({ res, error });
@@ -46,7 +44,7 @@ const generateNewToken = async (req: IUserRequest, res: Response) => {
 
     const refreshTokens = await RefreshToken.findOne({ token: refreshToken });
 
-    if (!refreshTokens || refreshToken !== refreshTokens.token || userId !== refreshTokens.user.toString()) return res.status(401).json({ message: 'unauthorized' });
+    if (!refreshTokens || refreshToken !== refreshTokens.token || userId !== refreshTokens.userId.toString()) return res.status(401).json({ message: 'unauthorized' });
 
     const accessToken = generateAccessToken(userId as string);
     res.cookie('accessToken', accessToken, { secure: true, httpOnly: true, maxAge: 30 * 60 * 1000 });
@@ -78,7 +76,7 @@ const initiatePayment = async (req: IUserRequest, res: Response) => {
           title: 'QuickMnemo Subscription',
           description: 'QuickMnemo: Effortlessly generate personalized mnemonics to enhance memory retention and learning. Simplify complex information with our user-friendly platform.',
         },
-        payment_plan: 67687,
+        // payment_plan: PAYMENT_PLAN,
       },
       {
         headers: {
@@ -89,11 +87,8 @@ const initiatePayment = async (req: IUserRequest, res: Response) => {
     );
 
     // store data in DB
-    const transaction = new Transaction({ user: userId, ref: tx_ref });
-    await transaction.save();
-
-    // generate token
-    // send token to mail
+    // const transaction = new Transaction({ userId, ref: tx_ref });
+    // await transaction.save();
 
     res.status(200).json({ message: data.data.link });
   } catch (error) {
@@ -104,6 +99,7 @@ const initiatePayment = async (req: IUserRequest, res: Response) => {
 const paymentCallback = async (req: IUserRequest, res: Response) => {
   try {
     const { status, tx_ref, transaction_id } = req.body;
+    const { userId } = req;
 
     if (status === 'successful' || status === 'completed') {
       const response = await axios.get(`https://api.flutterwave.com/v3/transactions/${transaction_id}/verify`, {
@@ -115,16 +111,21 @@ const paymentCallback = async (req: IUserRequest, res: Response) => {
       const dataObj = response.data.data;
 
       if (dataObj.status === 'successful' && dataObj.amount === 500 && dataObj.currency === 'NGN') {
-        const transaction = await Transaction.findOne({ ref: tx_ref });
-        if (!transaction) return res.status(404).json({ message: 'Transaction not found!' });
+        //* subscription ID
+        const { id } = dataObj;
 
-        transaction.isSuccessful = true;
-        await transaction.save();
-
-        const user = await User.findById(transaction.user);
+        const user = await User.findById(userId);
         if (!user) return res.status(404).json({ message: 'User not found!' });
 
-        // send token to user email
+        user.subscription = {
+          id,
+          status: 'active',
+        };
+        user.isPremium = true;
+
+        await user.save();
+
+        // send subscription newsletter
         await transportMail({ email: user.email });
 
         return res.status(200).json({ message: 'Payment successfully made!' });
@@ -141,13 +142,60 @@ const paymentCallback = async (req: IUserRequest, res: Response) => {
 
 const cancelSubscription = async (req: IUserRequest, res: Response) => {
   try {
+    const { userId } = req;
+    const user = await User.findById(userId);
+    if (!user) return res.status(404).json({ message: 'user not found!' });
+
     // cancel user subscription
-    const response = axios.put(`https://api.flutterwave.com/v3/subscriptions/:id/cancel`, {
+    await axios.put(`https://api.flutterwave.com/v3/subscriptions/${user.subscription.id}/cancel`, {
       headers: {
         Authorization: `Bearer ${FLW_SECRET_KEY}`,
         'Content-Type': 'application/json',
       },
     });
+
+    user.subscription.status = 'cancelled';
+    await user.save();
+
+    res.status(200).json({ message: 'User subscription cancelled successfully' });
+  } catch (error) {
+    handleErrors({ res, error });
+  }
+};
+
+const activateSubscription = async (req: IUserRequest, res: Response) => {
+  try {
+    const { userId } = req;
+    const user = await User.findById(userId);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    await axios.put(`https://api.flutterwave.com/v3/subscriptions/user.subscription.id/activate`);
+
+    user.subscription.status = 'active';
+    await user.save();
+
+    res.status(200).json({ message: 'User subscription activated successfully' });
+  } catch (error) {
+    handleErrors({ res, error });
+  }
+};
+
+const getUserInfo = async (req: IUserRequest, res: Response) => {
+  try {
+    const { userId } = req;
+    const user = await User.findById(userId).lean();
+    if (!user) return res.status(404).json({ message: 'user not found' });
+
+    const newObj = {} as any;
+
+    for (const key in user) {
+      if (key === 'password' || key === 'googleId') {
+        continue;
+      }
+      newObj[key] = user[key as keyof IUser];
+    }
+
+    res.status(200).json(newObj);
   } catch (error) {
     handleErrors({ res, error });
   }
@@ -178,4 +226,4 @@ const paymentWebhook = async (req: Request, res: Response) => {
   }
 };
 
-export { validateOAuthSession, generateNewToken, initiatePayment, paymentCallback };
+export { validateOAuthSession, generateNewToken, initiatePayment, paymentCallback, cancelSubscription, activateSubscription, getUserInfo };

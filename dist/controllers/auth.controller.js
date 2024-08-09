@@ -28,7 +28,7 @@ const register = async (req, res) => {
         const token = (0, generateToken_1.generateAccessToken)(user._id.toString());
         const refreshToken = (0, generateToken_1.generateRefreshToken)(user._id.toString());
         //* update refreshToken in DB
-        const newRefreshToken = new tokens_model_1.default({ token: refreshToken, user: user._id });
+        const newRefreshToken = new tokens_model_1.default({ token: refreshToken, userId: user._id });
         await newRefreshToken.save();
         //* set cookies for tokens
         res.cookie('accessToken', token, { secure: true, httpOnly: true, maxAge: 30 * 60 * 1000 });
@@ -54,7 +54,7 @@ const login = async (req, res) => {
         const token = (0, generateToken_1.generateAccessToken)(existingUser._id.toString());
         const refreshToken = (0, generateToken_1.generateRefreshToken)(existingUser._id.toString());
         //* update refreshToken in DB
-        const newRefreshToken = new tokens_model_1.default({ token: refreshToken, user: existingUser._id });
+        const newRefreshToken = new tokens_model_1.default({ token: refreshToken, userId: existingUser._id });
         await newRefreshToken.save();
         //* set cookies for tokens
         res.cookie('accessToken', token, { secure: true, httpOnly: true, maxAge: 30 * 60 * 1000 });

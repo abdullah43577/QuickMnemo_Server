@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { login, logout, register, testApi } from '../controllers/auth.controller';
 import { IUserRequest, validateAccessToken, validateRefreshToken } from '../utils/validateToken';
-import { validateOAuthSession, generateNewToken, initiatePayment, paymentCallback } from '../controllers/action.controller';
+import { validateOAuthSession, generateNewToken, initiatePayment, paymentCallback, cancelSubscription, activateSubscription, getUserInfo } from '../controllers/action.controller';
 import passport from 'passport';
 import jwt, { Secret } from 'jsonwebtoken';
 
@@ -34,7 +34,10 @@ router.delete('/logout', validateRefreshToken, logout);
 
 // action routes
 router.post('/token', validateRefreshToken, generateNewToken);
-router.get('/payment', validateAccessToken, initiatePayment);
-router.post('/payment/callback', validateAccessToken, paymentCallback);
+router.get('/subscribe', validateAccessToken, initiatePayment);
+router.post('/subscribe/callback', validateAccessToken, paymentCallback);
+router.put('/subscription/cancel', validateAccessToken, cancelSubscription);
+router.put('/subscription/activate', validateAccessToken, activateSubscription);
+router.get('/user-info', validateAccessToken, getUserInfo);
 
 export { router };

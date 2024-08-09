@@ -36,5 +36,8 @@ router.post('/login', auth_controller_1.login);
 router.delete('/logout', validateToken_1.validateRefreshToken, auth_controller_1.logout);
 // action routes
 router.post('/token', validateToken_1.validateRefreshToken, action_controller_1.generateNewToken);
-router.get('/payment', validateToken_1.validateAccessToken, action_controller_1.initiatePayment);
-router.post('/payment/callback', validateToken_1.validateAccessToken, action_controller_1.paymentCallback);
+router.get('/subscribe', validateToken_1.validateAccessToken, action_controller_1.initiatePayment);
+router.post('/subscribe/callback', validateToken_1.validateAccessToken, action_controller_1.paymentCallback);
+router.put('/subscription/cancel', validateToken_1.validateAccessToken, action_controller_1.cancelSubscription);
+router.put('/subscription/activate', validateToken_1.validateAccessToken, action_controller_1.activateSubscription);
+router.get('/user-info', validateToken_1.validateAccessToken, action_controller_1.getUserInfo);
