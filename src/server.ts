@@ -1,5 +1,5 @@
 import 'dotenv/config';
-import express from 'express';
+import express, { NextFunction } from 'express';
 import morgan from 'morgan';
 import cors from 'cors';
 import { router } from './routes/router';
@@ -10,7 +10,10 @@ import session from 'express-session';
 import passport from 'passport';
 import { passportSetup } from './utils/Google/passportSetup';
 import { Request, Response } from 'express';
+import NodeCache from 'node-cache';
+import { runJob } from './utils/cronJobs';
 
+export const cache = new NodeCache({ stdTTL: 60, checkperiod: 120 });
 const { PORT, SESSION_SECRET } = process.env;
 const app = express();
 
@@ -37,6 +40,17 @@ app.use(
 app.use(passport.initialize());
 app.use(passport.session());
 passportSetup();
+
+app.use((req: Request, res: Response, next: NextFunction) => {
+  const key = req.originalUrl;
+
+  const cachedData = cache.get(key);
+  if (cachedData) return res.status(200).json(cachedData);
+
+  next();
+});
+
+runJob();
 
 app.listen(PORT, async () => {
   // connect to database

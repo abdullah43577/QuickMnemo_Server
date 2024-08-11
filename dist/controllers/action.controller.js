@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.paymentWebhook = exports.saveMnemonics = exports.getUserInfo = exports.cancelSubscription = exports.paymentCallback = exports.initiatePayment = exports.generateNewToken = exports.validateOAuthSession = void 0;
+exports.paymentWebhook = exports.deleteMnemonics = exports.saveMnemonics = exports.getUserInfo = exports.cancelSubscription = exports.paymentCallback = exports.initiatePayment = exports.generateNewToken = exports.validateOAuthSession = void 0;
 const tokens_model_1 = __importDefault(require("../models/tokens.model"));
 const generateToken_1 = require("../utils/generateToken");
 const axios_1 = __importDefault(require("axios"));
@@ -13,6 +13,8 @@ const handleErrors_1 = require("../utils/handleErrors");
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const nodemailer_1 = require("../utils/nodemailer");
 const validators_1 = require("../utils/validators");
+const server_1 = require("../server");
+const calculateNextPaymentDate_1 = require("../utils/calculateNextPaymentDate");
 const { FLW_SECRET_KEY, FLW_SECRET_HASH, CLIENT_URL, SESSION_SECRET, PAYMENT_PLAN } = process.env;
 const AMOUNT = 500;
 const validateOAuthSession = async (req, res) => {
@@ -117,9 +119,13 @@ const paymentCallback = async (req, res) => {
                 const user = await users_model_1.default.findById(userId);
                 if (!user)
                     return res.status(404).json({ message: 'User not found!' });
+                const subscribedAt = new Date();
+                const nextPaymentDate = (0, calculateNextPaymentDate_1.calculateNextPaymentDate)(subscribedAt);
                 user.subscription = {
                     id,
                     status: 'active',
+                    subscribedAt,
+                    nextPaymentDate,
                 };
                 user.isPremium = true;
                 await user.save();
@@ -151,7 +157,10 @@ const cancelSubscription = async (req, res) => {
                 'Content-Type': 'application/json',
             },
         });
-        user.subscription.status = 'cancelled';
+        user.subscription = {
+            status: 'cancelled',
+            cancelledAt: new Date(),
+        };
         await user.save();
         res.status(200).json({ message: 'User subscription cancelled successfully' });
     }
@@ -162,6 +171,7 @@ const cancelSubscription = async (req, res) => {
 exports.cancelSubscription = cancelSubscription;
 const getUserInfo = async (req, res) => {
     try {
+        const key = req.originalUrl;
         const { userId } = req;
         const user = await users_model_1.default.findById(userId).lean();
         if (!user)
@@ -173,6 +183,8 @@ const getUserInfo = async (req, res) => {
             }
             newObj[key] = user[key];
         }
+        // set cache
+        server_1.cache.set(key, newObj);
         res.status(200).json(newObj);
     }
     catch (error) {
@@ -196,6 +208,22 @@ const saveMnemonics = async (req, res) => {
     }
 };
 exports.saveMnemonics = saveMnemonics;
+const deleteMnemonics = async (req, res) => {
+    try {
+        const { userId } = req;
+        const { txt } = req.body;
+        const user = await users_model_1.default.findById(userId);
+        if (!user)
+            return res.status(404).json({ message: 'user not found!' });
+        user.savedMnemonics = user.savedMnemonics.filter((mnemonic) => mnemonic.toLowerCase() !== txt.toLowerCase());
+        await user.save();
+        res.status(200).json({ message: 'Mnemonic deleted successfully!' });
+    }
+    catch (error) {
+        (0, handleErrors_1.handleErrors)({ res, error });
+    }
+};
+exports.deleteMnemonics = deleteMnemonics;
 const generateMnemonics = async (req, res) => {
     try {
         // generate mnemonics

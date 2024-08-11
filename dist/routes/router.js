@@ -42,3 +42,4 @@ router.put('/subscription/cancel', validateToken_1.validateAccessToken, action_c
 router.post('/flw-webhook', action_controller_1.paymentWebhook);
 router.get('/user-info', validateToken_1.validateAccessToken, action_controller_1.getUserInfo);
 router.put('/save-mnemonics', validateToken_1.validateAccessToken, action_controller_1.saveMnemonics);
+router.put('/delete-mnemonics', validateToken_1.validateAccessToken, action_controller_1.deleteMnemonics);

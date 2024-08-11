@@ -3,6 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.cache = void 0;
 require("dotenv/config");
 const express_1 = __importDefault(require("express"));
 const morgan_1 = __importDefault(require("morgan"));
@@ -14,6 +15,9 @@ const helmet_1 = __importDefault(require("helmet"));
 const express_session_1 = __importDefault(require("express-session"));
 const passport_1 = __importDefault(require("passport"));
 const passportSetup_1 = require("./utils/Google/passportSetup");
+const node_cache_1 = __importDefault(require("node-cache"));
+const cronJobs_1 = require("./utils/cronJobs");
+exports.cache = new node_cache_1.default({ stdTTL: 60, checkperiod: 120 });
 const { PORT, SESSION_SECRET } = process.env;
 const app = (0, express_1.default)();
 //* Middlewares
@@ -35,6 +39,14 @@ app.use((0, express_session_1.default)({
 app.use(passport_1.default.initialize());
 app.use(passport_1.default.session());
 (0, passportSetup_1.passportSetup)();
+app.use((req, res, next) => {
+    const key = req.originalUrl;
+    const cachedData = exports.cache.get(key);
+    if (cachedData)
+        return res.status(200).json(cachedData);
+    next();
+});
+(0, cronJobs_1.runJob)();
 app.listen(PORT, async () => {
     // connect to database
     await (0, connectDB_1.connectDB)();

@@ -25,6 +25,18 @@ const userSchema = new mongoose_1.Schema({
             enum: ['active', 'pending', 'cancelled'],
             default: 'pending',
         },
+        subscribedAt: {
+            type: Date,
+            default: null,
+        },
+        nextPaymentDate: {
+            type: Date,
+            default: null,
+        },
+        cancelledAt: {
+            type: Date,
+            default: null,
+        },
     },
     savedMnemonics: { type: [String], default: [] },
     googleId: {

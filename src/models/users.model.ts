@@ -5,8 +5,11 @@ export interface IUser {
   password?: string;
   isPremium: boolean;
   subscription: {
-    id: string;
+    id?: string;
     status: 'active' | 'pending' | 'cancelled';
+    subscribedAt?: Date;
+    nextPaymentDate?: Date;
+    cancelledAt?: Date;
   };
   savedMnemonics: string[];
   googleId?: string;
@@ -40,6 +43,21 @@ const userSchema = new Schema<IUser>(
         type: String,
         enum: ['active', 'pending', 'cancelled'],
         default: 'pending',
+      },
+
+      subscribedAt: {
+        type: Date,
+        default: null,
+      },
+
+      nextPaymentDate: {
+        type: Date,
+        default: null,
+      },
+
+      cancelledAt: {
+        type: Date,
+        default: null,
       },
     },
 

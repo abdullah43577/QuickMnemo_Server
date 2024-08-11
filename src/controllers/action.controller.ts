@@ -10,6 +10,8 @@ import jwt, { Secret } from 'jsonwebtoken';
 import { CustomJwtPayload } from '../utils/validateToken';
 import { transportMail } from '../utils/nodemailer';
 import { savedMnemonicsSchema } from '../utils/validators';
+import { cache } from '../server';
+import { calculateNextPaymentDate } from '../utils/calculateNextPaymentDate';
 
 const { FLW_SECRET_KEY, FLW_SECRET_HASH, CLIENT_URL, SESSION_SECRET, PAYMENT_PLAN } = process.env;
 
@@ -131,10 +133,16 @@ const paymentCallback = async (req: IUserRequest, res: Response) => {
         const user = await User.findById(userId);
         if (!user) return res.status(404).json({ message: 'User not found!' });
 
+        const subscribedAt = new Date();
+        const nextPaymentDate = calculateNextPaymentDate(subscribedAt);
+
         user.subscription = {
           id,
           status: 'active',
+          subscribedAt,
+          nextPaymentDate,
         };
+
         user.isPremium = true;
 
         await user.save();
@@ -168,7 +176,10 @@ const cancelSubscription = async (req: IUserRequest, res: Response) => {
       },
     });
 
-    user.subscription.status = 'cancelled';
+    user.subscription = {
+      status: 'cancelled',
+      cancelledAt: new Date(),
+    };
     await user.save();
 
     res.status(200).json({ message: 'User subscription cancelled successfully' });
@@ -179,6 +190,7 @@ const cancelSubscription = async (req: IUserRequest, res: Response) => {
 
 const getUserInfo = async (req: IUserRequest, res: Response) => {
   try {
+    const key = req.originalUrl;
     const { userId } = req;
     const user = await User.findById(userId).lean();
     if (!user) return res.status(404).json({ message: 'user not found' });
@@ -192,6 +204,8 @@ const getUserInfo = async (req: IUserRequest, res: Response) => {
       newObj[key] = user[key as keyof IUser];
     }
 
+    // set cache
+    cache.set(key, newObj);
     res.status(200).json(newObj);
   } catch (error) {
     handleErrors({ res, error });
@@ -210,6 +224,23 @@ const saveMnemonics = async (req: IUserRequest, res: Response) => {
     await user.save();
 
     res.sendStatus(200);
+  } catch (error) {
+    handleErrors({ res, error });
+  }
+};
+
+const deleteMnemonics = async (req: IUserRequest, res: Response) => {
+  try {
+    const { userId } = req;
+    const { txt } = req.body;
+
+    const user = await User.findById(userId);
+    if (!user) return res.status(404).json({ message: 'user not found!' });
+
+    user.savedMnemonics = user.savedMnemonics.filter((mnemonic) => mnemonic.toLowerCase() !== txt.toLowerCase());
+    await user.save();
+
+    res.status(200).json({ message: 'Mnemonic deleted successfully!' });
   } catch (error) {
     handleErrors({ res, error });
   }
@@ -240,4 +271,4 @@ const paymentWebhook = async (req: Request, res: Response) => {
   }
 };
 
-export { validateOAuthSession, generateNewToken, initiatePayment, paymentCallback, cancelSubscription, getUserInfo, saveMnemonics, paymentWebhook };
+export { validateOAuthSession, generateNewToken, initiatePayment, paymentCallback, cancelSubscription, getUserInfo, saveMnemonics, deleteMnemonics, paymentWebhook };

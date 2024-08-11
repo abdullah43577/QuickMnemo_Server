@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { login, logout, register, testApi } from '../controllers/auth.controller';
 import { IUserRequest, validateAccessToken, validateRefreshToken } from '../utils/validateToken';
-import { validateOAuthSession, generateNewToken, initiatePayment, paymentCallback, cancelSubscription, getUserInfo, paymentWebhook, saveMnemonics } from '../controllers/action.controller';
+import { validateOAuthSession, generateNewToken, initiatePayment, paymentCallback, cancelSubscription, getUserInfo, paymentWebhook, saveMnemonics, deleteMnemonics } from '../controllers/action.controller';
 import passport from 'passport';
 import jwt, { Secret } from 'jsonwebtoken';
 
@@ -40,5 +40,6 @@ router.put('/subscription/cancel', validateAccessToken, cancelSubscription);
 router.post('/flw-webhook', paymentWebhook);
 router.get('/user-info', validateAccessToken, getUserInfo);
 router.put('/save-mnemonics', validateAccessToken, saveMnemonics);
+router.put('/delete-mnemonics', validateAccessToken, deleteMnemonics);
 
 export { router };
