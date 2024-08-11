@@ -5,6 +5,7 @@ import mongoose from 'mongoose';
 export const connectDB = async () => {
   const dbURI = `mongodb+srv://${DB_USER}:${DB_PASS}@quickmnemocluster.vl0va.mongodb.net/${DB_NAME}`;
 
+  // new comment here
   try {
     await mongoose.connect(dbURI);
     console.log('Connected to MongoDB');

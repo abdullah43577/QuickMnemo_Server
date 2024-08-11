@@ -9,6 +9,7 @@ const { DB_USER, DB_PASS, DB_NAME } = process.env;
 const mongoose_1 = __importDefault(require("mongoose"));
 const connectDB = async () => {
     const dbURI = `mongodb+srv://${DB_USER}:${DB_PASS}@quickmnemocluster.vl0va.mongodb.net/${DB_NAME}`;
+    // new comment here
     try {
         await mongoose_1.default.connect(dbURI);
         console.log('Connected to MongoDB');
