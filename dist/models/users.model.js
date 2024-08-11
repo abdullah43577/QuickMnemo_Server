@@ -18,7 +18,6 @@ const userSchema = new mongoose_1.Schema({
     subscription: {
         id: {
             type: String,
-            required: true,
             default: null,
         },
         status: {
@@ -27,6 +26,7 @@ const userSchema = new mongoose_1.Schema({
             default: 'pending',
         },
     },
+    savedMnemonics: { type: [String], default: [] },
     googleId: {
         type: String,
         default: null,

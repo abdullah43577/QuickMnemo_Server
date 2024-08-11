@@ -8,6 +8,7 @@ export interface IUser {
     id: string;
     status: 'active' | 'pending' | 'cancelled';
   };
+  savedMnemonics: string[];
   googleId?: string;
 }
 
@@ -32,7 +33,6 @@ const userSchema = new Schema<IUser>(
     subscription: {
       id: {
         type: String,
-        required: true,
         default: null,
       },
 
@@ -42,6 +42,8 @@ const userSchema = new Schema<IUser>(
         default: 'pending',
       },
     },
+
+    savedMnemonics: { type: [String], default: [] },
 
     googleId: {
       type: String,

@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getUserInfo = exports.activateSubscription = exports.cancelSubscription = exports.paymentCallback = exports.initiatePayment = exports.generateNewToken = exports.validateOAuthSession = void 0;
+exports.paymentWebhook = exports.saveMnemonics = exports.getUserInfo = exports.cancelSubscription = exports.paymentCallback = exports.initiatePayment = exports.generateNewToken = exports.validateOAuthSession = void 0;
 const tokens_model_1 = __importDefault(require("../models/tokens.model"));
 const generateToken_1 = require("../utils/generateToken");
 const axios_1 = __importDefault(require("axios"));
@@ -12,6 +12,7 @@ const users_model_1 = __importDefault(require("../models/users.model"));
 const handleErrors_1 = require("../utils/handleErrors");
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const nodemailer_1 = require("../utils/nodemailer");
+const validators_1 = require("../utils/validators");
 const { FLW_SECRET_KEY, FLW_SECRET_HASH, CLIENT_URL, SESSION_SECRET, PAYMENT_PLAN } = process.env;
 const AMOUNT = 500;
 const validateOAuthSession = async (req, res) => {
@@ -22,6 +23,9 @@ const validateOAuthSession = async (req, res) => {
         const { userId } = jsonwebtoken_1.default.verify(tokenId, SESSION_SECRET);
         if (!userId)
             return res.status(401).json({ message: 'Invalid Token' });
+        const existingToken = await tokens_model_1.default.findOne({ userId }).lean();
+        if (existingToken)
+            return res.status(204).json({ message: 'User with corresponding ID already has a refreshToken in place' });
         // generate tokens
         const token = (0, generateToken_1.generateAccessToken)(userId);
         const refreshToken = (0, generateToken_1.generateRefreshToken)(userId);
@@ -56,30 +60,40 @@ exports.generateNewToken = generateNewToken;
 const initiatePayment = async (req, res) => {
     try {
         const { userId } = req;
-        const user = await users_model_1.default.findById(userId).lean();
+        const user = await users_model_1.default.findById(userId);
         if (!user)
             return res.status(404).json({ message: 'User not found!' });
-        const tx_ref = (0, uuid_1.v4)();
-        const { data } = await axios_1.default.post('https://api.flutterwave.com/v3/payments', {
-            tx_ref,
-            amount: AMOUNT,
-            currency: 'NGN',
-            redirect_url: `${CLIENT_URL}`, // ideally be a frontend url
-            customer: {
-                email: user.email,
-            },
-            customizations: {
-                title: 'QuickMnemo Subscription',
-                description: 'QuickMnemo: Effortlessly generate personalized mnemonics to enhance memory retention and learning. Simplify complex information with our user-friendly platform.',
-            },
-            payment_plan: PAYMENT_PLAN,
-        }, {
-            headers: {
-                Authorization: `Bearer ${FLW_SECRET_KEY}`,
-                'Content-Type': 'application/json',
-            },
-        });
-        res.status(200).json({ message: data.data.link });
+        //* IF USER WAS ONCE A SUBSCRIBER
+        if (user.subscription.id) {
+            await axios_1.default.put(`https://api.flutterwave.com/v3/subscriptions/user.subscription.id/activate`);
+            user.subscription.status = 'active';
+            await user.save();
+            res.status(200).json({ type: 'subscription_activated', message: 'User subscription activated successfully' });
+        }
+        else {
+            //* NEW SUBSCRIBER
+            const tx_ref = (0, uuid_1.v4)();
+            const { data } = await axios_1.default.post('https://api.flutterwave.com/v3/payments', {
+                tx_ref,
+                amount: AMOUNT,
+                currency: 'NGN',
+                redirect_url: `${CLIENT_URL}`, // ideally be a frontend url
+                customer: {
+                    email: user.email,
+                },
+                customizations: {
+                    title: 'QuickMnemo Subscription',
+                    description: 'QuickMnemo: Effortlessly generate personalized mnemonics to enhance memory retention and learning. Simplify complex information with our user-friendly platform.',
+                },
+                payment_plan: PAYMENT_PLAN,
+            }, {
+                headers: {
+                    Authorization: `Bearer ${FLW_SECRET_KEY}`,
+                    'Content-Type': 'application/json',
+                },
+            });
+            res.status(200).json({ type: 'new_subscription', message: data.data.link });
+        }
     }
     catch (error) {
         (0, handleErrors_1.handleErrors)({ res, error });
@@ -146,22 +160,6 @@ const cancelSubscription = async (req, res) => {
     }
 };
 exports.cancelSubscription = cancelSubscription;
-const activateSubscription = async (req, res) => {
-    try {
-        const { userId } = req;
-        const user = await users_model_1.default.findById(userId);
-        if (!user)
-            return res.status(404).json({ message: 'User not found' });
-        await axios_1.default.put(`https://api.flutterwave.com/v3/subscriptions/user.subscription.id/activate`);
-        user.subscription.status = 'active';
-        await user.save();
-        res.status(200).json({ message: 'User subscription activated successfully' });
-    }
-    catch (error) {
-        (0, handleErrors_1.handleErrors)({ res, error });
-    }
-};
-exports.activateSubscription = activateSubscription;
 const getUserInfo = async (req, res) => {
     try {
         const { userId } = req;
@@ -182,6 +180,22 @@ const getUserInfo = async (req, res) => {
     }
 };
 exports.getUserInfo = getUserInfo;
+const saveMnemonics = async (req, res) => {
+    try {
+        const { userId } = req;
+        const { savedMnemonics } = validators_1.savedMnemonicsSchema.parse(req.body);
+        const user = await users_model_1.default.findById(userId);
+        if (!user)
+            return res.status(404).json({ message: 'User not found!' });
+        user.savedMnemonics.push(...savedMnemonics);
+        await user.save();
+        res.sendStatus(200);
+    }
+    catch (error) {
+        (0, handleErrors_1.handleErrors)({ res, error });
+    }
+};
+exports.saveMnemonics = saveMnemonics;
 const generateMnemonics = async (req, res) => {
     try {
         // generate mnemonics
@@ -207,3 +221,4 @@ const paymentWebhook = async (req, res) => {
         (0, handleErrors_1.handleErrors)({ res, error });
     }
 };
+exports.paymentWebhook = paymentWebhook;

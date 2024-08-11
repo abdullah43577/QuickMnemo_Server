@@ -39,5 +39,6 @@ router.post('/token', validateToken_1.validateRefreshToken, action_controller_1.
 router.get('/subscribe', validateToken_1.validateAccessToken, action_controller_1.initiatePayment);
 router.post('/subscribe/callback', validateToken_1.validateAccessToken, action_controller_1.paymentCallback);
 router.put('/subscription/cancel', validateToken_1.validateAccessToken, action_controller_1.cancelSubscription);
-router.put('/subscription/activate', validateToken_1.validateAccessToken, action_controller_1.activateSubscription);
+router.post('/flw-webhook', action_controller_1.paymentWebhook);
 router.get('/user-info', validateToken_1.validateAccessToken, action_controller_1.getUserInfo);
+router.put('/save-mnemonics', validateToken_1.validateAccessToken, action_controller_1.saveMnemonics);
