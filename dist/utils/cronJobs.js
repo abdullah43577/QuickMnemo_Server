@@ -37,7 +37,7 @@ const pingServer = function () {
         try {
             // Ping your server's /ping endpoint
             const response = await axios_1.default.get('https://quickmnemo-server.onrender.com/auth/');
-            console.log(`Pinged server: ${response.data}`);
+            console.log(`Pinged server: ${response.data.message}`);
         }
         catch (error) {
             console.error('Error pinging the server:', error);
