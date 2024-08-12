@@ -3,9 +3,10 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.runJob = void 0;
+exports.pingServer = exports.runJob = void 0;
 const node_cron_1 = __importDefault(require("node-cron"));
 const users_model_1 = __importDefault(require("../models/users.model"));
+const axios_1 = __importDefault(require("axios"));
 const runJob = function () {
     node_cron_1.default.schedule('0 0 * * *', async () => {
         try {
@@ -31,3 +32,16 @@ const runJob = function () {
     });
 };
 exports.runJob = runJob;
+const pingServer = function () {
+    node_cron_1.default.schedule('*/10 * * * *', async () => {
+        try {
+            // Ping your server's /ping endpoint
+            const response = await axios_1.default.get('https://quickmnemo-server.onrender.com/auth/');
+            console.log(`Pinged server: ${response.data}`);
+        }
+        catch (error) {
+            console.error('Error pinging the server:', error);
+        }
+    });
+};
+exports.pingServer = pingServer;

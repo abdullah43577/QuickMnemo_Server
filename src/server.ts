@@ -11,7 +11,7 @@ import passport from 'passport';
 import { passportSetup } from './utils/Google/passportSetup';
 import { Request, Response } from 'express';
 import NodeCache from 'node-cache';
-import { runJob } from './utils/cronJobs';
+import { runJob, pingServer } from './utils/cronJobs';
 
 export const cache = new NodeCache({ stdTTL: 60, checkperiod: 120 });
 const { PORT, SESSION_SECRET } = process.env;
@@ -51,6 +51,7 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 });
 
 runJob();
+pingServer();
 
 app.listen(PORT, async () => {
   // connect to database
