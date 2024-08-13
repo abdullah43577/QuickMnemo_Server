@@ -23,7 +23,7 @@ const app = (0, express_1.default)();
 //* Middlewares
 app.use((0, morgan_1.default)('dev'));
 app.use((0, cors_1.default)({
-    origin: ['http://localhost:3000'],
+    origin: ['http://localhost:3000', 'https://quick-mnemo-client.vercel.app'],
 }));
 app.use(express_1.default.json());
 app.use(express_1.default.urlencoded({ extended: false }));
