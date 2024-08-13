@@ -24,15 +24,6 @@ const register = async (req, res) => {
         const encryptedPassword = await (0, hashPassword_1.hashPassword)(password);
         const user = new users_model_1.default({ email, password: encryptedPassword });
         await user.save();
-        // //* generate tokens
-        // const token = generateAccessToken(user._id.toString());
-        // const refreshToken = generateRefreshToken(user._id.toString());
-        // //* update refreshToken in DB
-        // const newRefreshToken = new RefreshToken({ token: refreshToken, userId: user._id });
-        // await newRefreshToken.save();
-        // //* set cookies for tokens
-        // res.cookie('accessToken', token, { secure: true, httpOnly: true, maxAge: 30 * 60 * 1000 });
-        // res.cookie('refreshToken', refreshToken, { secure: true, httpOnly: true, sameSite: 'strict', maxAge: 7 * 24 * 60 * 60 * 1000 });
         res.status(200).json({ message: 'User created successfully!' });
     }
     catch (error) {
@@ -51,15 +42,12 @@ const login = async (req, res) => {
         if (!isMatch)
             return res.status(400).json({ message: 'email or password incorrect' });
         //* generate tokens
-        const token = (0, generateToken_1.generateAccessToken)(existingUser._id.toString());
+        const accessToken = (0, generateToken_1.generateAccessToken)(existingUser._id.toString());
         const refreshToken = (0, generateToken_1.generateRefreshToken)(existingUser._id.toString());
         //* update refreshToken in DB
         const newRefreshToken = new tokens_model_1.default({ token: refreshToken, userId: existingUser._id });
         await newRefreshToken.save();
-        //* set cookies for tokens
-        res.cookie('accessToken', token, { secure: true, httpOnly: true, sameSite: 'none', maxAge: 30 * 60 * 1000 });
-        res.cookie('refreshToken', refreshToken, { secure: true, httpOnly: true, sameSite: 'none', maxAge: 7 * 24 * 60 * 60 * 1000 });
-        res.status(200).json({ message: 'User created successfully!' });
+        res.status(200).json({ message: 'User logged in successfully!', token: { accessToken, refreshToken } });
     }
     catch (error) {
         (0, handleErrors_1.handleErrors)({ res, error });

@@ -26,18 +26,14 @@ const validateOAuthSession = async (req: IUserRequest, res: Response) => {
     if (!userId) return res.status(401).json({ message: 'Invalid Token' });
 
     // generate tokens
-    const token = generateAccessToken(userId);
+    const accessToken = generateAccessToken(userId);
     const refreshToken = generateRefreshToken(userId);
 
     // update refreshToken in DB
     const newRefreshToken = new RefreshToken({ token: refreshToken, userId: userId });
     await newRefreshToken.save();
 
-    // set cookies for tokens
-    res.cookie('accessToken', token, { httpOnly: true, secure: true, sameSite: 'none', maxAge: 15 * 60 * 1000 });
-    res.cookie('refreshToken', refreshToken, { httpOnly: true, secure: true, sameSite: 'none', maxAge: 7 * 24 * 60 * 60 * 1000 });
-
-    res.sendStatus(200);
+    res.status(200).json({ message: 'User logged in successfully!', token: { accessToken, refreshToken } });
   } catch (error) {
     handleErrors({ res, error });
   }
@@ -52,8 +48,8 @@ const generateNewToken = async (req: IUserRequest, res: Response) => {
     if (!refreshTokens || refreshToken !== refreshTokens.token || userId !== refreshTokens.userId.toString()) return res.status(401).json({ message: 'unauthorized' });
 
     const accessToken = generateAccessToken(userId as string);
-    res.cookie('accessToken', accessToken, { secure: true, httpOnly: true, maxAge: 30 * 60 * 1000 });
-    res.status(200).json({ message: 'Access token generated successfully!' });
+
+    res.status(200).json({ message: 'Access token generated successfully!', accessToken });
   } catch (error) {
     res.status(500).json({ message: 'Internal Server error', error });
   }

@@ -9,10 +9,6 @@ const { ACCESS_TOKEN_SECRET, REFRESH_TOKEN_SECRET } = process.env;
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const validateAccessToken = function (req, res, next) {
     let token = req.headers['authorization']?.split(' ')[1];
-    // If token is not found in headers, try to find it in cookies
-    if (!token && req.cookies) {
-        token = req.cookies['accessToken'];
-    }
     if (!token)
         return res.status(401).json({ message: 'Access Denied, No token provided!' });
     try {
@@ -26,12 +22,7 @@ const validateAccessToken = function (req, res, next) {
 };
 exports.validateAccessToken = validateAccessToken;
 const validateRefreshToken = function (req, res, next) {
-    let refreshToken;
-    refreshToken = req.body.refreshToken;
-    // if token is not found in body
-    if (!refreshToken) {
-        refreshToken = req.cookies['refreshToken'];
-    }
+    let refreshToken = req.body.refreshToken;
     if (!refreshToken)
         return res.status(401).json({ message: 'Access Denied, Refresh token not provided!' });
     try {

@@ -15,11 +15,6 @@ export interface CustomJwtPayload extends JwtPayload {
 export const validateAccessToken = function (req: IUserRequest, res: Response, next: NextFunction) {
   let token = req.headers['authorization']?.split(' ')[1];
 
-  // If token is not found in headers, try to find it in cookies
-  if (!token && req.cookies) {
-    token = req.cookies['accessToken'];
-  }
-
   if (!token) return res.status(401).json({ message: 'Access Denied, No token provided!' });
 
   try {
@@ -32,13 +27,7 @@ export const validateAccessToken = function (req: IUserRequest, res: Response, n
 };
 
 export const validateRefreshToken = function (req: IUserRequest, res: Response, next: NextFunction) {
-  let refreshToken;
-  refreshToken = req.body.refreshToken;
-
-  // if token is not found in body
-  if (!refreshToken) {
-    refreshToken = req.cookies['refreshToken'];
-  }
+  let refreshToken = req.body.refreshToken;
 
   if (!refreshToken) return res.status(401).json({ message: 'Access Denied, Refresh token not provided!' });
 
