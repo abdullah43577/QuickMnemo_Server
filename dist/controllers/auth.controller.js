@@ -58,8 +58,8 @@ const login = async (req, res) => {
         const newRefreshToken = new tokens_model_1.default({ token: refreshToken, userId: existingUser._id });
         await newRefreshToken.save();
         //* set cookies for tokens
-        res.cookie('accessToken', token, { secure: NODE_ENV === 'production', httpOnly: true, maxAge: 30 * 60 * 1000 });
-        res.cookie('refreshToken', refreshToken, { secure: NODE_ENV === 'production', httpOnly: true, sameSite: 'strict', maxAge: 7 * 24 * 60 * 60 * 1000 });
+        res.cookie('accessToken', token, { secure: NODE_ENV === 'production', httpOnly: true, sameSite: 'none', maxAge: 30 * 60 * 1000 });
+        res.cookie('refreshToken', refreshToken, { secure: NODE_ENV === 'production', httpOnly: true, sameSite: 'none', maxAge: 7 * 24 * 60 * 60 * 1000 });
         res.status(200).json({ message: 'User created successfully!' });
     }
     catch (error) {
