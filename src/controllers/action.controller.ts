@@ -25,9 +25,6 @@ const validateOAuthSession = async (req: IUserRequest, res: Response) => {
     const { userId } = jwt.verify(tokenId, SESSION_SECRET as Secret) as CustomJwtPayload;
     if (!userId) return res.status(401).json({ message: 'Invalid Token' });
 
-    const existingToken = await RefreshToken.findOne({ userId }).lean();
-    if (existingToken) return res.status(204).json({ message: 'User with corresponding ID already has a refreshToken in place' });
-
     // generate tokens
     const token = generateAccessToken(userId);
     const refreshToken = generateRefreshToken(userId);

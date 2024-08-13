@@ -25,9 +25,6 @@ const validateOAuthSession = async (req, res) => {
         const { userId } = jsonwebtoken_1.default.verify(tokenId, SESSION_SECRET);
         if (!userId)
             return res.status(401).json({ message: 'Invalid Token' });
-        const existingToken = await tokens_model_1.default.findOne({ userId }).lean();
-        if (existingToken)
-            return res.status(204).json({ message: 'User with corresponding ID already has a refreshToken in place' });
         // generate tokens
         const token = (0, generateToken_1.generateAccessToken)(userId);
         const refreshToken = (0, generateToken_1.generateRefreshToken)(userId);
