@@ -10,6 +10,7 @@ const validators_1 = require("../utils/validators");
 const handleErrors_1 = require("../utils/handleErrors");
 const users_model_1 = __importDefault(require("../models/users.model"));
 const hashPassword_1 = require("../utils/hashPassword");
+const { NODE_ENV } = process.env;
 const testApi = async (req, res) => {
     res.status(200).json({ message: 'SERVERS ARE LIVE!!!' });
 };
@@ -24,15 +25,15 @@ const register = async (req, res) => {
         const encryptedPassword = await (0, hashPassword_1.hashPassword)(password);
         const user = new users_model_1.default({ email, password: encryptedPassword });
         await user.save();
-        //* generate tokens
-        const token = (0, generateToken_1.generateAccessToken)(user._id.toString());
-        const refreshToken = (0, generateToken_1.generateRefreshToken)(user._id.toString());
-        //* update refreshToken in DB
-        const newRefreshToken = new tokens_model_1.default({ token: refreshToken, userId: user._id });
-        await newRefreshToken.save();
-        //* set cookies for tokens
-        res.cookie('accessToken', token, { secure: true, httpOnly: true, maxAge: 30 * 60 * 1000 });
-        res.cookie('refreshToken', refreshToken, { secure: true, httpOnly: true, sameSite: 'strict', maxAge: 7 * 24 * 60 * 60 * 1000 });
+        // //* generate tokens
+        // const token = generateAccessToken(user._id.toString());
+        // const refreshToken = generateRefreshToken(user._id.toString());
+        // //* update refreshToken in DB
+        // const newRefreshToken = new RefreshToken({ token: refreshToken, userId: user._id });
+        // await newRefreshToken.save();
+        // //* set cookies for tokens
+        // res.cookie('accessToken', token, { secure: true, httpOnly: true, maxAge: 30 * 60 * 1000 });
+        // res.cookie('refreshToken', refreshToken, { secure: true, httpOnly: true, sameSite: 'strict', maxAge: 7 * 24 * 60 * 60 * 1000 });
         res.status(200).json({ message: 'User created successfully!' });
     }
     catch (error) {
@@ -57,8 +58,8 @@ const login = async (req, res) => {
         const newRefreshToken = new tokens_model_1.default({ token: refreshToken, userId: existingUser._id });
         await newRefreshToken.save();
         //* set cookies for tokens
-        res.cookie('accessToken', token, { secure: true, httpOnly: true, maxAge: 30 * 60 * 1000 });
-        res.cookie('refreshToken', refreshToken, { secure: true, httpOnly: true, sameSite: 'strict', maxAge: 7 * 24 * 60 * 60 * 1000 });
+        res.cookie('accessToken', token, { secure: NODE_ENV === 'production', httpOnly: true, maxAge: 30 * 60 * 1000 });
+        res.cookie('refreshToken', refreshToken, { secure: NODE_ENV === 'production', httpOnly: true, sameSite: 'strict', maxAge: 7 * 24 * 60 * 60 * 1000 });
         res.status(200).json({ message: 'User created successfully!' });
     }
     catch (error) {

@@ -13,7 +13,7 @@ import { savedMnemonicsSchema } from '../utils/validators';
 import { cache } from '../server';
 import { calculateNextPaymentDate } from '../utils/calculateNextPaymentDate';
 
-const { FLW_SECRET_KEY, FLW_SECRET_HASH, CLIENT_URL, SESSION_SECRET, PAYMENT_PLAN } = process.env;
+const { FLW_SECRET_KEY, FLW_SECRET_HASH, CLIENT_URL, SESSION_SECRET, PAYMENT_PLAN, NODE_ENV } = process.env;
 
 const AMOUNT = 500;
 
@@ -34,8 +34,8 @@ const validateOAuthSession = async (req: IUserRequest, res: Response) => {
     await newRefreshToken.save();
 
     // set cookies for tokens
-    res.cookie('accessToken', token, { httpOnly: true, secure: true, sameSite: 'none', maxAge: 15 * 60 * 1000 });
-    res.cookie('refreshToken', refreshToken, { httpOnly: true, secure: true, sameSite: 'none', maxAge: 7 * 24 * 60 * 60 * 1000 });
+    res.cookie('accessToken', token, { httpOnly: true, secure: NODE_ENV === 'production', sameSite: 'none', maxAge: 15 * 60 * 1000 });
+    res.cookie('refreshToken', refreshToken, { httpOnly: true, secure: NODE_ENV === 'production', sameSite: 'none', maxAge: 7 * 24 * 60 * 60 * 1000 });
 
     res.sendStatus(200);
   } catch (error) {
