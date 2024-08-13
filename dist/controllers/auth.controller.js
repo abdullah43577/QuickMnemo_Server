@@ -10,7 +10,6 @@ const validators_1 = require("../utils/validators");
 const handleErrors_1 = require("../utils/handleErrors");
 const users_model_1 = __importDefault(require("../models/users.model"));
 const hashPassword_1 = require("../utils/hashPassword");
-const { NODE_ENV } = process.env;
 const testApi = async (req, res) => {
     res.status(200).json({ message: 'SERVERS ARE LIVE!!!' });
 };
@@ -58,8 +57,8 @@ const login = async (req, res) => {
         const newRefreshToken = new tokens_model_1.default({ token: refreshToken, userId: existingUser._id });
         await newRefreshToken.save();
         //* set cookies for tokens
-        res.cookie('accessToken', token, { secure: NODE_ENV === 'production', httpOnly: true, sameSite: 'none', maxAge: 30 * 60 * 1000 });
-        res.cookie('refreshToken', refreshToken, { secure: NODE_ENV === 'production', httpOnly: true, sameSite: 'none', maxAge: 7 * 24 * 60 * 60 * 1000 });
+        res.cookie('accessToken', token, { secure: true, httpOnly: true, sameSite: 'none', maxAge: 30 * 60 * 1000 });
+        res.cookie('refreshToken', refreshToken, { secure: true, httpOnly: true, sameSite: 'none', maxAge: 7 * 24 * 60 * 60 * 1000 });
         res.status(200).json({ message: 'User created successfully!' });
     }
     catch (error) {

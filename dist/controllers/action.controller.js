@@ -15,7 +15,7 @@ const nodemailer_1 = require("../utils/nodemailer");
 const validators_1 = require("../utils/validators");
 const server_1 = require("../server");
 const calculateNextPaymentDate_1 = require("../utils/calculateNextPaymentDate");
-const { FLW_SECRET_KEY, FLW_SECRET_HASH, CLIENT_URL, SESSION_SECRET, PAYMENT_PLAN, NODE_ENV } = process.env;
+const { FLW_SECRET_KEY, FLW_SECRET_HASH, CLIENT_URL, SESSION_SECRET, PAYMENT_PLAN } = process.env;
 const AMOUNT = 500;
 const validateOAuthSession = async (req, res) => {
     try {
@@ -32,8 +32,8 @@ const validateOAuthSession = async (req, res) => {
         const newRefreshToken = new tokens_model_1.default({ token: refreshToken, userId: userId });
         await newRefreshToken.save();
         // set cookies for tokens
-        res.cookie('accessToken', token, { httpOnly: true, secure: NODE_ENV === 'production', sameSite: 'none', maxAge: 15 * 60 * 1000 });
-        res.cookie('refreshToken', refreshToken, { httpOnly: true, secure: NODE_ENV === 'production', sameSite: 'none', maxAge: 7 * 24 * 60 * 60 * 1000 });
+        res.cookie('accessToken', token, { httpOnly: true, secure: true, sameSite: 'none', maxAge: 15 * 60 * 1000 });
+        res.cookie('refreshToken', refreshToken, { httpOnly: true, secure: true, sameSite: 'none', maxAge: 7 * 24 * 60 * 60 * 1000 });
         res.sendStatus(200);
     }
     catch (error) {

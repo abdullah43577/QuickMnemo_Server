@@ -6,8 +6,6 @@ import { handleErrors } from '../utils/handleErrors';
 import User from '../models/users.model';
 import { comparePassword, hashPassword } from '../utils/hashPassword';
 
-const { NODE_ENV } = process.env;
-
 const testApi = async (req: Request, res: Response) => {
   res.status(200).json({ message: 'SERVERS ARE LIVE!!!' });
 };
@@ -63,8 +61,8 @@ const login = async (req: Request, res: Response) => {
     await newRefreshToken.save();
 
     //* set cookies for tokens
-    res.cookie('accessToken', token, { secure: NODE_ENV === 'production', httpOnly: true, sameSite: 'none', maxAge: 30 * 60 * 1000 });
-    res.cookie('refreshToken', refreshToken, { secure: NODE_ENV === 'production', httpOnly: true, sameSite: 'none', maxAge: 7 * 24 * 60 * 60 * 1000 });
+    res.cookie('accessToken', token, { secure: true, httpOnly: true, sameSite: 'none', maxAge: 30 * 60 * 1000 });
+    res.cookie('refreshToken', refreshToken, { secure: true, httpOnly: true, sameSite: 'none', maxAge: 7 * 24 * 60 * 60 * 1000 });
 
     res.status(200).json({ message: 'User created successfully!' });
   } catch (error) {
