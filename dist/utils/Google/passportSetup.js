@@ -12,7 +12,7 @@ const passportSetup = function () {
     passport_1.default.use(new passport_google_oauth20_1.Strategy({
         clientID: GOOGLE_CLIENT_ID,
         clientSecret: GOOGLE_CLIENT_SECRET,
-        callbackURL: '/auth/google/callback',
+        // callbackURL: '/auth/google/callback',
     }, async function (_accessToken, _refreshToken, profile, done) {
         try {
             const { id, emails, photos } = profile;
