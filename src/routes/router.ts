@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { login, logout, register, testApi } from '../controllers/auth.controller';
 import { IUserRequest, validateAccessToken, validateRefreshToken } from '../utils/validateToken';
-import { validateOAuthSession, generateNewToken, initiatePayment, paymentCallback, cancelSubscription, getUserInfo, paymentWebhook, saveMnemonics, deleteMnemonics } from '../controllers/action.controller';
+import { validateOAuthSession, generateNewToken, initiatePayment, paymentCallback, cancelSubscription, getUserInfo, paymentWebhook, saveMnemonics, deleteMnemonics, generateMnemonics } from '../controllers/action.controller';
 import passport from 'passport';
 import jwt, { Secret } from 'jsonwebtoken';
 
@@ -10,7 +10,7 @@ const { SESSION_SECRET, CLIENT_URL } = process.env;
 const router = Router();
 
 //* Google Auth route
-router.get('/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
+router.get('/google', passport.authenticate('google', { scope: ['profile', 'email'], prompt: 'consent' }));
 router.get('/google/callback', passport.authenticate('google'), async (req: IUserRequest, res) => {
   try {
     const { user } = req;
@@ -41,5 +41,6 @@ router.post('/flw-webhook', paymentWebhook);
 router.get('/user-info', validateAccessToken, getUserInfo);
 router.put('/save-mnemonics', validateAccessToken, saveMnemonics);
 router.put('/delete-mnemonics', validateAccessToken, deleteMnemonics);
+router.post('/generate-mnemonics', validateAccessToken, generateMnemonics);
 
 export { router };

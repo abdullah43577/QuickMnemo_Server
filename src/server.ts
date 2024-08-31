@@ -49,8 +49,8 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   next();
 });
 
-runJob();
 pingServer();
+runJob();
 
 app.listen(PORT, async () => {
   // connect to database

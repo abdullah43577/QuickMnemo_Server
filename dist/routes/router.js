@@ -14,7 +14,7 @@ const { SESSION_SECRET, CLIENT_URL } = process.env;
 const router = (0, express_1.Router)();
 exports.router = router;
 //* Google Auth route
-router.get('/google', passport_1.default.authenticate('google', { scope: ['profile', 'email'] }));
+router.get('/google', passport_1.default.authenticate('google', { scope: ['profile', 'email'], prompt: 'consent' }));
 router.get('/google/callback', passport_1.default.authenticate('google'), async (req, res) => {
     try {
         const { user } = req;
@@ -43,3 +43,4 @@ router.post('/flw-webhook', action_controller_1.paymentWebhook);
 router.get('/user-info', validateToken_1.validateAccessToken, action_controller_1.getUserInfo);
 router.put('/save-mnemonics', validateToken_1.validateAccessToken, action_controller_1.saveMnemonics);
 router.put('/delete-mnemonics', validateToken_1.validateAccessToken, action_controller_1.deleteMnemonics);
+router.post('/generate-mnemonics', validateToken_1.validateAccessToken, action_controller_1.generateMnemonics);

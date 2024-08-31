@@ -12,6 +12,7 @@ import { transportMail } from '../utils/nodemailer';
 import { savedMnemonicsSchema } from '../utils/validators';
 import { cache } from '../server';
 import { calculateNextPaymentDate } from '../utils/calculateNextPaymentDate';
+import { generateMnemonic } from '../utils/claude/claude';
 
 const { FLW_SECRET_KEY, FLW_SECRET_HASH, CLIENT_URL, SESSION_SECRET, PAYMENT_PLAN } = process.env;
 
@@ -239,9 +240,41 @@ const deleteMnemonics = async (req: IUserRequest, res: Response) => {
   }
 };
 
-const generateMnemonics = async (req: Request, res: Response) => {
+const generateMnemonics = async (req: IUserRequest, res: Response) => {
   try {
-    // generate mnemonics
+    const { userId } = req;
+    const { data, mnemonicType, reqType } = req.body;
+    if (!data || !mnemonicType) return res.status(400).json({ message: 'Data and mnemonicType are required!' });
+
+    //* get current user if applicable
+    const user = await User.findById(userId);
+
+    let generatedMnemonic;
+
+    //* for users with account
+    if (user) {
+      if (user.isPremium) {
+        if (data.length > 20) throw new Error('Mnemonics length must be 20 characters or less!');
+        generatedMnemonic = await generateMnemonic({ data, mnemonicType, mnemonicCount: 20 });
+      } else {
+        if (data.length > 6) throw new Error('Mnemonics length must be 6 characters or less!');
+        generatedMnemonic = await generateMnemonic({ data, mnemonicType: 'simple', mnemonicCount: 6 });
+      }
+    }
+
+    //* for users without account
+    if (!generatedMnemonic || reqType === 'mnemonic') {
+      if (data.length > 6) throw new Error('Mnemonics length must be 6 characters or less!');
+      generatedMnemonic = await generateMnemonic({ data, mnemonicType: 'simple', mnemonicCount: 6 });
+    }
+
+    //* extract data
+    const sentencesArray = generatedMnemonic
+      .split('\n')
+      .filter((line) => line.trim().length > 0 && !line.startsWith("Here's"))
+      .map((line) => line.trim().replace(/\.$/, ''));
+
+    res.status(200).json({ message: 'Mnemonic generated successfully!', mnemonic: sentencesArray });
   } catch (error) {
     handleErrors({ res, error });
   }
@@ -264,4 +297,4 @@ const paymentWebhook = async (req: Request, res: Response) => {
   }
 };
 
-export { validateOAuthSession, generateNewToken, initiatePayment, paymentCallback, cancelSubscription, getUserInfo, saveMnemonics, deleteMnemonics, paymentWebhook };
+export { validateOAuthSession, generateNewToken, initiatePayment, paymentCallback, cancelSubscription, getUserInfo, saveMnemonics, deleteMnemonics, generateMnemonics, paymentWebhook };

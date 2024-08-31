@@ -13,6 +13,9 @@ export interface CustomJwtPayload extends JwtPayload {
 }
 
 export const validateAccessToken = function (req: IUserRequest, res: Response, next: NextFunction) {
+  let { reqType } = req.body;
+  if (reqType === 'mnemonic') return next();
+
   let token = req.headers['authorization']?.split(' ')[1];
 
   if (!token) return res.status(401).json({ message: 'Access Denied, No token provided!' });

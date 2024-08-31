@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.paymentWebhook = exports.deleteMnemonics = exports.saveMnemonics = exports.getUserInfo = exports.cancelSubscription = exports.paymentCallback = exports.initiatePayment = exports.generateNewToken = exports.validateOAuthSession = void 0;
+exports.paymentWebhook = exports.generateMnemonics = exports.deleteMnemonics = exports.saveMnemonics = exports.getUserInfo = exports.cancelSubscription = exports.paymentCallback = exports.initiatePayment = exports.generateNewToken = exports.validateOAuthSession = void 0;
 const tokens_model_1 = __importDefault(require("../models/tokens.model"));
 const generateToken_1 = require("../utils/generateToken");
 const axios_1 = __importDefault(require("axios"));
@@ -15,6 +15,7 @@ const nodemailer_1 = require("../utils/nodemailer");
 const validators_1 = require("../utils/validators");
 const server_1 = require("../server");
 const calculateNextPaymentDate_1 = require("../utils/calculateNextPaymentDate");
+const claude_1 = require("../utils/claude/claude");
 const { FLW_SECRET_KEY, FLW_SECRET_HASH, CLIENT_URL, SESSION_SECRET, PAYMENT_PLAN } = process.env;
 const AMOUNT = 500;
 const validateOAuthSession = async (req, res) => {
@@ -219,12 +220,44 @@ const deleteMnemonics = async (req, res) => {
 exports.deleteMnemonics = deleteMnemonics;
 const generateMnemonics = async (req, res) => {
     try {
-        // generate mnemonics
+        const { userId } = req;
+        const { data, mnemonicType, reqType } = req.body;
+        if (!data || !mnemonicType)
+            return res.status(400).json({ message: 'Data and mnemonicType are required!' });
+        //* get current user if applicable
+        const user = await users_model_1.default.findById(userId);
+        let generatedMnemonic;
+        //* for users with account
+        if (user) {
+            if (user.isPremium) {
+                if (data.length > 20)
+                    throw new Error('Mnemonics length must be 20 characters or less!');
+                generatedMnemonic = await (0, claude_1.generateMnemonic)({ data, mnemonicType, mnemonicCount: 20 });
+            }
+            else {
+                if (data.length > 6)
+                    throw new Error('Mnemonics length must be 6 characters or less!');
+                generatedMnemonic = await (0, claude_1.generateMnemonic)({ data, mnemonicType: 'simple', mnemonicCount: 6 });
+            }
+        }
+        //* for users without account
+        if (!generatedMnemonic || reqType === 'mnemonic') {
+            if (data.length > 6)
+                throw new Error('Mnemonics length must be 6 characters or less!');
+            generatedMnemonic = await (0, claude_1.generateMnemonic)({ data, mnemonicType: 'simple', mnemonicCount: 6 });
+        }
+        //* extract data
+        const sentencesArray = generatedMnemonic
+            .split('\n')
+            .filter((line) => line.trim().length > 0 && !line.startsWith("Here's"))
+            .map((line) => line.trim().replace(/\.$/, ''));
+        res.status(200).json({ message: 'Mnemonic generated successfully!', mnemonic: sentencesArray });
     }
     catch (error) {
         (0, handleErrors_1.handleErrors)({ res, error });
     }
 };
+exports.generateMnemonics = generateMnemonics;
 const paymentWebhook = async (req, res) => {
     try {
         // If you specified a secret hash, check for the signature

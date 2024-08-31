@@ -45,8 +45,8 @@ app.use((req, res, next) => {
         return res.status(200).json(cachedData);
     next();
 });
-(0, cronJobs_1.runJob)();
 (0, cronJobs_1.pingServer)();
+(0, cronJobs_1.runJob)();
 app.listen(PORT, async () => {
     // connect to database
     await (0, connectDB_1.connectDB)();
