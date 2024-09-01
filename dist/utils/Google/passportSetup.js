@@ -7,12 +7,12 @@ exports.passportSetup = void 0;
 const passport_1 = __importDefault(require("passport"));
 const passport_google_oauth20_1 = require("passport-google-oauth20");
 const users_model_1 = __importDefault(require("../../models/users.model"));
-const { GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET } = process.env;
+const { GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GOOGLE_CALLBACK_URL } = process.env;
 const passportSetup = function () {
     passport_1.default.use(new passport_google_oauth20_1.Strategy({
         clientID: GOOGLE_CLIENT_ID,
         clientSecret: GOOGLE_CLIENT_SECRET,
-        callbackURL: 'https://quickmnemo-server.onrender.com/auth/google/callback',
+        callbackURL: GOOGLE_CALLBACK_URL,
     }, async function (_accessToken, _refreshToken, profile, done) {
         try {
             const { id, emails, photos } = profile;

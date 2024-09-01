@@ -2,7 +2,7 @@ import passport from 'passport';
 import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
 import User from '../../models/users.model';
 
-const { GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET } = process.env;
+const { GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GOOGLE_CALLBACK_URL } = process.env;
 
 export const passportSetup = function () {
   passport.use(
@@ -10,7 +10,7 @@ export const passportSetup = function () {
       {
         clientID: GOOGLE_CLIENT_ID as string,
         clientSecret: GOOGLE_CLIENT_SECRET as string,
-        callbackURL: 'https://quickmnemo-server.onrender.com/auth/google/callback',
+        callbackURL: GOOGLE_CALLBACK_URL as string,
       },
       async function (_accessToken, _refreshToken, profile, done) {
         try {
