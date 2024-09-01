@@ -10,7 +10,7 @@ export const passportSetup = function () {
       {
         clientID: GOOGLE_CLIENT_ID as string,
         clientSecret: GOOGLE_CLIENT_SECRET as string,
-        callbackURL: '/auth/google/callback',
+        callbackURL: 'https://quickmnemo-server.onrender.com/auth/google/callback',
       },
       async function (_accessToken, _refreshToken, profile, done) {
         try {
