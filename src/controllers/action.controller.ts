@@ -246,13 +246,15 @@ const generateMnemonics = async (req: IUserRequest, res: Response) => {
     const { keyLetters, mnemonicType, reqType } = req.body;
     if (!keyLetters || !mnemonicType) return res.status(400).json({ message: 'Key-Letters and mnemonicType are required!' });
 
-    //* get current user if applicable
-    const user = await User.findById(userId);
-
     let generatedMnemonic;
 
-    //* for users with account
-    if (user) {
+    if (userId.length) {
+      //* get current user if applicable
+      const user = await User.findById(userId);
+      if (!user) return res.status(404).json({ message: 'User not found!' });
+
+      //* for users with account
+
       if (user.isPremium) {
         if (keyLetters.length > 20) throw new Error('Mnemonics length must be 20 characters or less!');
         generatedMnemonic = await generateMnemonic({ keyLetters, mnemonicType, mnemonicCount: 20 });
@@ -260,10 +262,7 @@ const generateMnemonics = async (req: IUserRequest, res: Response) => {
         if (keyLetters.length > 6) throw new Error('Mnemonics length must be 6 characters or less!');
         generatedMnemonic = await generateMnemonic({ keyLetters, mnemonicType: 'simple', mnemonicCount: 6 });
       }
-    }
-
-    //* for users without account
-    if (!generatedMnemonic || reqType === 'mnemonic') {
+    } else {
       if (keyLetters.length > 6) throw new Error('Mnemonics length must be 6 characters or less!');
       generatedMnemonic = await generateMnemonic({ keyLetters, mnemonicType: 'simple', mnemonicCount: 6 });
     }
