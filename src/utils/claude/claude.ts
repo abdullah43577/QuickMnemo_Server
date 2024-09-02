@@ -13,7 +13,7 @@ export const generateMnemonic = async function ({ keyLetters, mnemonicType, mnem
   const msg = await anthropic.messages.create({
     model: 'claude-3-5-sonnet-20240620',
     max_tokens: 1000,
-    temperature: 0.1,
+    temperature: 0.7,
     system: 'You are an experienced professional creating customized and memorable mnemonics for technical concepts.',
     messages: [
       {
@@ -21,7 +21,7 @@ export const generateMnemonic = async function ({ keyLetters, mnemonicType, mnem
         content: [
           {
             type: 'text',
-            text: `Based on the following data: ${keyLetters}, create exactly ${mnemonicCount} mnemonic sentences that are ${mnemonicType}. Each sentence should be short, easy to remember, and ensuring faster memory retention and relevance to the provided terms. Do not number the sentences, and do not include any additional explanation or commentary.`,
+            text: `You are given the following key letters: "${keyLetters}". Your task is to generate exactly ${mnemonicCount} mnemonic sentences that are categorized as "${mnemonicType}". Each mnemonic sentence must directly correspond to the key letters provided, ensuring that the sentences are memorable, simple, and relevant. The mnemonic sentences should not include additional words or concepts that are not derived from the key letters. Do not number the sentences, and avoid adding any extra commentary or explanation.`,
           },
         ],
       },
