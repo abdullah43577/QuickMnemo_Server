@@ -14,7 +14,8 @@ export interface CustomJwtPayload extends JwtPayload {
 
 export const validateAccessToken = function (req: IUserRequest, res: Response, next: NextFunction) {
   let { reqType } = req.body;
-  if (reqType === 'mnemonic') return next();
+  console.log(req.body);
+  if (reqType.toLowerCase() === 'mnemonic') return next(); //* this is used to bypass the normal token validation for mnemonic generation
 
   let token = req.headers['authorization']?.split(' ')[1];
 

@@ -7,7 +7,7 @@ exports.generateMnemonic = void 0;
 const sdk_1 = __importDefault(require("@anthropic-ai/sdk"));
 const { CLAUDE_API_KEY } = process.env;
 const anthropic = new sdk_1.default({ apiKey: CLAUDE_API_KEY });
-const generateMnemonic = async function ({ data, mnemonicType, mnemonicCount }) {
+const generateMnemonic = async function ({ keyLetters, mnemonicType, mnemonicCount }) {
     const msg = await anthropic.messages.create({
         model: 'claude-3-5-sonnet-20240620',
         max_tokens: 1000,
@@ -19,7 +19,7 @@ const generateMnemonic = async function ({ data, mnemonicType, mnemonicCount }) 
                 content: [
                     {
                         type: 'text',
-                        text: `Based on the following data: ${data}, create exactly ${mnemonicCount} mnemonic sentences that are ${mnemonicType}. Each sentence should be short, easy to remember, and ensuring faster memory retention and relevance to the provided terms. Do not number the sentences, and do not include any additional explanation or commentary.`,
+                        text: `Based on the following data: ${keyLetters}, create exactly ${mnemonicCount} mnemonic sentences that are ${mnemonicType}. Each sentence should be short, easy to remember, and ensuring faster memory retention and relevance to the provided terms. Do not number the sentences, and do not include any additional explanation or commentary.`,
                     },
                 ],
             },

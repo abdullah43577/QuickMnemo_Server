@@ -221,30 +221,30 @@ exports.deleteMnemonics = deleteMnemonics;
 const generateMnemonics = async (req, res) => {
     try {
         const { userId } = req;
-        const { data, mnemonicType, reqType } = req.body;
-        if (!data || !mnemonicType)
-            return res.status(400).json({ message: 'Data and mnemonicType are required!' });
+        const { keyLetters, mnemonicType, reqType } = req.body;
+        if (!keyLetters || !mnemonicType)
+            return res.status(400).json({ message: 'Key-Letters and mnemonicType are required!' });
         //* get current user if applicable
         const user = await users_model_1.default.findById(userId);
         let generatedMnemonic;
         //* for users with account
         if (user) {
             if (user.isPremium) {
-                if (data.length > 20)
+                if (keyLetters.length > 20)
                     throw new Error('Mnemonics length must be 20 characters or less!');
-                generatedMnemonic = await (0, claude_1.generateMnemonic)({ data, mnemonicType, mnemonicCount: 20 });
+                generatedMnemonic = await (0, claude_1.generateMnemonic)({ keyLetters, mnemonicType, mnemonicCount: 20 });
             }
             else {
-                if (data.length > 6)
+                if (keyLetters.length > 6)
                     throw new Error('Mnemonics length must be 6 characters or less!');
-                generatedMnemonic = await (0, claude_1.generateMnemonic)({ data, mnemonicType: 'simple', mnemonicCount: 6 });
+                generatedMnemonic = await (0, claude_1.generateMnemonic)({ keyLetters, mnemonicType: 'simple', mnemonicCount: 6 });
             }
         }
         //* for users without account
         if (!generatedMnemonic || reqType === 'mnemonic') {
-            if (data.length > 6)
+            if (keyLetters.length > 6)
                 throw new Error('Mnemonics length must be 6 characters or less!');
-            generatedMnemonic = await (0, claude_1.generateMnemonic)({ data, mnemonicType: 'simple', mnemonicCount: 6 });
+            generatedMnemonic = await (0, claude_1.generateMnemonic)({ keyLetters, mnemonicType: 'simple', mnemonicCount: 6 });
         }
         //* extract data
         const sentencesArray = generatedMnemonic
