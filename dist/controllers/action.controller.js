@@ -225,7 +225,7 @@ const generateMnemonics = async (req, res) => {
         if (!keyLetters || !mnemonicType)
             return res.status(400).json({ message: 'Key-Letters and mnemonicType are required!' });
         let generatedMnemonic;
-        if (userId.length) {
+        if (userId?.length) {
             //* get current user if applicable
             const user = await users_model_1.default.findById(userId);
             if (!user)

@@ -248,7 +248,7 @@ const generateMnemonics = async (req: IUserRequest, res: Response) => {
 
     let generatedMnemonic;
 
-    if (userId.length) {
+    if (userId?.length) {
       //* get current user if applicable
       const user = await User.findById(userId);
       if (!user) return res.status(404).json({ message: 'User not found!' });
