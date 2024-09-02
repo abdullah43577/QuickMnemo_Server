@@ -11,7 +11,7 @@ const generateMnemonic = async function ({ keyLetters, mnemonicType, mnemonicCou
     const msg = await anthropic.messages.create({
         model: 'claude-3-5-sonnet-20240620',
         max_tokens: 1000,
-        temperature: 0.7,
+        temperature: 0.1,
         system: 'You are an experienced professional creating customized and memorable mnemonics for technical concepts.',
         messages: [
             {
