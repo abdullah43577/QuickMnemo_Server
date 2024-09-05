@@ -9,8 +9,7 @@ const { ACCESS_TOKEN_SECRET, REFRESH_TOKEN_SECRET } = process.env;
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const validateAccessToken = function (req, res, next) {
     let { reqType } = req.body;
-    console.log(req.body);
-    if (reqType.toLowerCase() === 'mnemonic')
+    if (reqType?.toLowerCase() === 'mnemonic')
         return next(); //* this is used to bypass the normal token validation for mnemonic generation
     let token = req.headers['authorization']?.split(' ')[1];
     if (!token)
