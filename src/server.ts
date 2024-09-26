@@ -49,7 +49,7 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   next();
 });
 
-pingServer();
+// pingServer();
 runJob();
 
 app.listen(PORT, async () => {
